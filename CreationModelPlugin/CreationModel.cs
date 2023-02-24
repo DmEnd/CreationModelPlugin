@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.Attributes;
+﻿using Autodesk.Revit.ApplicationServices;
+using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace CreationModelPlugin
 {
@@ -43,10 +45,173 @@ namespace CreationModelPlugin
                 AddWindow(doc, level1, walls[1]);
                 AddWindow(doc, level1, walls[2]);
                 AddWindow(doc, level1, walls[3]);
+
+            //AddRoofFoot(doc, level2, walls);
+            AddRoofExtrusion(doc, level2, walls[3], walls[0]);
             transaction.Commit();
 
             return Result.Succeeded;
         }
+
+        ///// <summary>899,00
+        ///// Create a dictionary of adjoinging walls keyed on a particular wall ID.
+        ///// </summary>
+        ///// <param name="document">Tje Revit API Document</param>
+        ///// <returns>A dictionary keyed on a wall id containing a collection of walls that adjoin the key id wall</returns>
+        //public IDictionary<ElementId, ICollection<Wall>> GetAdjoiningWallsMap(Document document)
+        //{
+        //    IDictionary<ElementId, ICollection<Wall>> result = new Dictionary<ElementId, ICollection<Wall>>();
+
+        //    FilteredElementCollector collector = new FilteredElementCollector(document);
+        //    collector.OfClass(typeof(Wall));
+        //    foreach (Wall wall in collector.Cast<Wall>())
+        //    {
+        //        IEnumerable<Element> joinedElements0 = GetAdjoiningElements(wall.Location as LocationCurve, wall.Id, 0);
+        //        IEnumerable<Element> joinedElements1 = GetAdjoiningElements(wall.Location as LocationCurve, wall.Id, 1);
+        //        result[wall.Id] = joinedElements0.Union(joinedElements1).OfType<Wall>().ToList();
+        //    }
+        //    return result;
+        //}
+
+        //private IEnumerable<Element> GetAdjoiningElements(LocationCurve locationCurve, ElementId wallId, Int32 index)
+        //{
+        //    IList<Element> result = new List<Element>();
+        //    ElementArray a = locationCurve.get_ElementsAtJoin(index);
+        //    foreach (Element element in a)
+        //        if (element.Id != wallId)
+        //            result.Add(element);
+        //    return result;
+        //}
+
+        //public XYZ GetElementCenter(Element element)
+        //{
+        //    BoundingBoxXYZ bounding = element.get_BoundingBox(null);
+        //    return (bounding.Max + bounding.Min) / 2;
+        //}
+
+        //public void ExteriorWallFaceLength (Document doc, Wall wall) 
+        //{
+            //Face interiorWallFace = wall.GetGeometryObjectFromReference(interiorWallFaceRef) as Face;
+            //EdgeArrayArray interioredgeArrays = interiorWallFace.EdgeLoops;
+
+
+            //foreach (EdgeArray edges in interioredgeArrays)
+            //{
+            //    List<List<double>> corners = new List<List<double>>();
+            //    foreach (Edge edge in edges)
+            //    {
+            //        XYZ testPoint = edge.Evaluate(0.0);
+            //        corners.Add(new List<double> { FootToCm(testPoint.X), FootToCm(testPoint.Y), FootToCm(testPoint.Z) });
+            //    }
+            //}
+
+
+        //    var c = wall.Location as LocationCurve;
+        //    c.get_ElementsAtJoin();
+
+
+        //    Face interiorWallFace = wall.GetGeometryObjectFromReference(interiorWallFaceRef) as Face;
+        //    EdgeArrayArray interioredgeArrays = interiorWallFace.EdgeLoops;
+
+        //    // Get the side faces
+        //    IList<Reference> sideFaces = HostObjectUtils.GetSideFaces(wall, ShellLayerType.Exterior);
+
+        //    var a=GetGeometryObjectFromReference();
+
+        //    // access the side face
+        //    Face face = doc.GetElement(sideFaces[0]).GetGeometryObjectFromReference(sideFaces[0]) as Face;
+        //    List<CurveLoop> curveLoops = face.GetEdgesAsCurveLoops().ToList();
+
+
+
+        //    //List<double> lengthList = new List<double>();
+        //    double maxlengthEdge = 0;
+        //    foreach (CurveLoop curveLoop in curveLoops)
+        //    {
+
+        //        double lengthEdge = 0;
+
+        //        foreach (Curve c in curveLoop)
+        //        {
+        //            XYZ delta = c.GetEndPoint(0) - c.GetEndPoint(1);
+        //            if (delta.Z!=0)
+        //            {
+        //                break;
+        //            }
+        //            lengthEdge+=c.Length;
+        //        }
+
+        //        maxlengthEdge= lengthEdge;
+        //    }
+        //    MessageBox.Show("Максимальная длина горизонтального ребра внешней грани", maxlengthEdge.ToString());
+        //}
+
+
+        private void AddRoofExtrusion(Document doc, Level level2, Wall wall, Wall wallOrto)
+        {
+            RoofType roofType = new FilteredElementCollector(doc)
+                .OfClass(typeof(RoofType))
+                .OfType<RoofType>()
+                .Where(x => x.Name.Equals("Типовой - 400мм"))
+                .Where(x => x.FamilyName.Equals("Базовая крыша"))
+                .FirstOrDefault();
+
+            double wallWidth = walls[0].Width;
+            double dt = wallWidth / 2;
+            double dz = wall.get_Parameter(BuiltInParameter.WALL_USER_HEIGHT_PARAM).AsDouble();
+            double roofLength = ((LocationCurve)wallOrto.Location).Curve.Length + wallWidth;
+
+            LocationCurve locationCurve = wall.Location as LocationCurve;
+            XYZ point1 = locationCurve.Curve.GetEndPoint(0) + new XYZ(-dt, dt, dz);
+            XYZ point2 = locationCurve.Curve.GetEndPoint(1) + new XYZ(-dt, -dt, dz);
+            XYZ delta = point2 - point1;
+            XYZ midPoint = point1 + delta/2 + new XYZ(0, 0, UnitUtils.ConvertToInternalUnits(1000, UnitTypeId.Millimeters));
+
+            CurveArray curveArray = new CurveArray();
+            curveArray.Append(Line.CreateBound(point1, midPoint));
+            curveArray.Append(Line.CreateBound(midPoint, point2));
+
+            ReferencePlane plane = doc.Create.NewReferencePlane(point1, point1 + new XYZ(0, 0, -1), point2 - point1, doc.ActiveView);
+            doc.Create.NewExtrusionRoof(curveArray, plane, level2, roofType, 0, roofLength);
+        }
+        
+        //private void AddRoofFoot(Document doc, Level level2, List<Wall> walls)
+        //{
+        //    RoofType roofType = new FilteredElementCollector(doc)
+        //        .OfClass(typeof(RoofType))
+        //        .OfType<RoofType>()
+        //        .Where(x => x.Name.Equals("Типовой - 400мм"))
+        //        .Where(x => x.FamilyName.Equals("Базовая крыша"))
+        //        .FirstOrDefault();
+
+        //    double wallWidth = walls[0].Width;
+        //    double dt = wallWidth / 2;
+        //    List<XYZ> points = new List<XYZ>();
+        //    points.Add(new XYZ(-dt, -dt, 0));
+        //    points.Add(new XYZ(dt, -dt, 0));
+        //    points.Add(new XYZ(dt, dt, 0));
+        //    points.Add(new XYZ(-dt, dt, 0));
+        //    points.Add(new XYZ(-dt, -dt, 0));
+
+        //    Application application = doc.Application;
+        //    CurveArray footprint = application.Create.NewCurveArray();
+        //    for (int i = 0; i < walls.Count; i++)
+        //    {
+        //        LocationCurve curve = walls[i].Location as LocationCurve;
+        //        XYZ p1 = curve.Curve.GetEndPoint(0);
+        //        XYZ p2 = curve.Curve.GetEndPoint(1);
+        //        Line line = Line.CreateBound(p1 + points[i], p2 + points[i + 1]);
+        //        footprint.Append(line);
+        //    }
+        //    ModelCurveArray footPrintToModelCurveMapping = new ModelCurveArray();
+        //    FootPrintRoof footPrintRoof = doc.Create.NewFootPrintRoof(footprint, level2, roofType,
+        //        out footPrintToModelCurveMapping);
+        //    foreach (ModelCurve m in footPrintToModelCurveMapping)
+        //    {
+        //        footPrintRoof.set_DefinesSlope(m, true);
+        //        footPrintRoof.set_SlopeAngle(m, 0.5);
+        //    }
+        //}
 
         private void AddWindow(Document doc, Level level1, Wall wall)
         {
