@@ -46,105 +46,12 @@ namespace CreationModelPlugin
                 AddWindow(doc, level1, walls[2]);
                 AddWindow(doc, level1, walls[3]);
 
-            //AddRoofFoot(doc, level2, walls);
-            AddRoofExtrusion(doc, level2, walls[3], walls[0]);
+                //AddRoofFoot(doc, level2, walls);
+                AddRoofExtrusion(doc, level2, walls[3], walls[0]);
             transaction.Commit();
 
             return Result.Succeeded;
         }
-
-        ///// <summary>899,00
-        ///// Create a dictionary of adjoinging walls keyed on a particular wall ID.
-        ///// </summary>
-        ///// <param name="document">Tje Revit API Document</param>
-        ///// <returns>A dictionary keyed on a wall id containing a collection of walls that adjoin the key id wall</returns>
-        //public IDictionary<ElementId, ICollection<Wall>> GetAdjoiningWallsMap(Document document)
-        //{
-        //    IDictionary<ElementId, ICollection<Wall>> result = new Dictionary<ElementId, ICollection<Wall>>();
-
-        //    FilteredElementCollector collector = new FilteredElementCollector(document);
-        //    collector.OfClass(typeof(Wall));
-        //    foreach (Wall wall in collector.Cast<Wall>())
-        //    {
-        //        IEnumerable<Element> joinedElements0 = GetAdjoiningElements(wall.Location as LocationCurve, wall.Id, 0);
-        //        IEnumerable<Element> joinedElements1 = GetAdjoiningElements(wall.Location as LocationCurve, wall.Id, 1);
-        //        result[wall.Id] = joinedElements0.Union(joinedElements1).OfType<Wall>().ToList();
-        //    }
-        //    return result;
-        //}
-
-        //private IEnumerable<Element> GetAdjoiningElements(LocationCurve locationCurve, ElementId wallId, Int32 index)
-        //{
-        //    IList<Element> result = new List<Element>();
-        //    ElementArray a = locationCurve.get_ElementsAtJoin(index);
-        //    foreach (Element element in a)
-        //        if (element.Id != wallId)
-        //            result.Add(element);
-        //    return result;
-        //}
-
-        //public XYZ GetElementCenter(Element element)
-        //{
-        //    BoundingBoxXYZ bounding = element.get_BoundingBox(null);
-        //    return (bounding.Max + bounding.Min) / 2;
-        //}
-
-        //public void ExteriorWallFaceLength (Document doc, Wall wall) 
-        //{
-            //Face interiorWallFace = wall.GetGeometryObjectFromReference(interiorWallFaceRef) as Face;
-            //EdgeArrayArray interioredgeArrays = interiorWallFace.EdgeLoops;
-
-
-            //foreach (EdgeArray edges in interioredgeArrays)
-            //{
-            //    List<List<double>> corners = new List<List<double>>();
-            //    foreach (Edge edge in edges)
-            //    {
-            //        XYZ testPoint = edge.Evaluate(0.0);
-            //        corners.Add(new List<double> { FootToCm(testPoint.X), FootToCm(testPoint.Y), FootToCm(testPoint.Z) });
-            //    }
-            //}
-
-
-        //    var c = wall.Location as LocationCurve;
-        //    c.get_ElementsAtJoin();
-
-
-        //    Face interiorWallFace = wall.GetGeometryObjectFromReference(interiorWallFaceRef) as Face;
-        //    EdgeArrayArray interioredgeArrays = interiorWallFace.EdgeLoops;
-
-        //    // Get the side faces
-        //    IList<Reference> sideFaces = HostObjectUtils.GetSideFaces(wall, ShellLayerType.Exterior);
-
-        //    var a=GetGeometryObjectFromReference();
-
-        //    // access the side face
-        //    Face face = doc.GetElement(sideFaces[0]).GetGeometryObjectFromReference(sideFaces[0]) as Face;
-        //    List<CurveLoop> curveLoops = face.GetEdgesAsCurveLoops().ToList();
-
-
-
-        //    //List<double> lengthList = new List<double>();
-        //    double maxlengthEdge = 0;
-        //    foreach (CurveLoop curveLoop in curveLoops)
-        //    {
-
-        //        double lengthEdge = 0;
-
-        //        foreach (Curve c in curveLoop)
-        //        {
-        //            XYZ delta = c.GetEndPoint(0) - c.GetEndPoint(1);
-        //            if (delta.Z!=0)
-        //            {
-        //                break;
-        //            }
-        //            lengthEdge+=c.Length;
-        //        }
-
-        //        maxlengthEdge= lengthEdge;
-        //    }
-        //    MessageBox.Show("Максимальная длина горизонтального ребра внешней грани", maxlengthEdge.ToString());
-        //}
 
 
         private void AddRoofExtrusion(Document doc, Level level2, Wall wall, Wall wallOrto)
